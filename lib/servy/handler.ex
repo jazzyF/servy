@@ -2,20 +2,12 @@ defmodule Servy.Handler do
   def handle(request) do
     request
     |> parse
-    |> rewrite_request
     |> rewrite_path
     |> log
     |> route
-    |> emojify
     |> track
     |> format_response
   end
-
-  def emojify(%{status: 200, resp_body: body} = conv) do
-    %{conv | resp_body: "emoji #{body} emoji"}
-  end
-
-  def emojify(conv), do: conv
 
   def track(%{status: 404, path: path} = conv) do
     IO.puts "Warning #{path} is on the loose!"
@@ -28,7 +20,7 @@ defmodule Servy.Handler do
     %{ conv | path: "/wildthings" }
   end
 
-  def rewrite_path(conv), do: %{ conv | path: "/wildthings" }
+  def rewrite_path(conv), do: conv
 
   def log(conv), do: IO.inspect conv
 
@@ -45,12 +37,12 @@ defmodule Servy.Handler do
       status: nil }
   end
 
-
-  def rewrite_request(%{method: "GET", path: "/bears?id=" <> id} = conv) do
-    %{conv | path: "/bears/" <> id }
+  def route(%{method: "GET", path: "/about"} = conv) do
+    Path.expand("../../pages", __DIR__)
+    |> Path.join("about.html")
+    |> File.read
+    |> handle_file(conv)
   end
-
-  def rewrite_request(conv), do: conv
 
   def route(%{method: "GET", path: "/wildthings"} = conv) do
     %{ conv | status: 200, resp_body: "Bears, Lions, Tigers" }
@@ -66,6 +58,18 @@ defmodule Servy.Handler do
 
   def route(%{path: path} = conv) do
     %{ conv | status: 404, resp_body: "No #{path} here!" }
+  end
+
+  defp handle_file({:ok, content}, conv) do
+    %{ conv | status: 200, resp_body: content }
+  end
+
+  defp handle_file({:error, :enoent}, conv) do
+    %{ conv | status: 404, resp_body: "File not found!" }
+  end
+
+  defp handle_file({:error, reason}, conv) do
+    %{ conv | status: 500, resp_body: "File error: #{reason}" }
   end
 
   def format_response(conv) do
@@ -92,12 +96,20 @@ defmodule Servy.Handler do
 end
 
 request = """
-GET /bears?id=1 HTTP/1.1
+GET /about HTTP/1.1
 Host: example.com
 User-Agent: ExampleBrowser/1.0
 Accept: */*
 
 """
+
+# request = """
+# GET /bears/new HTTP/1.1
+# Host: example.com
+# User-Agent: ExampleBrowser/1.0
+# Accept: */*
+
+# """
 
 response = Servy.Handler.handle(request)
 
