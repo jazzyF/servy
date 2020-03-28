@@ -45,9 +45,6 @@ defmodule Servy.Handler do
       status: nil }
   end
 
-  # def route(conv) do
-  #   route(conv, conv.method, conv.path)
-  # end
 
   def rewrite_request(%{method: "GET", path: "/bears?id=" <> id} = conv) do
     %{conv | path: "/bears/" <> id }
