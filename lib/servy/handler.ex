@@ -77,18 +77,16 @@ defmodule Servy.Handler do
 
 end
 
+
 request = """
-GET /bears HTTP/1.1
+GET /bears/1 HTTP/1.1
 Host: example.com
 User-Agent: ExampleBrowser/1.0
 Accept: */*
-Content-Type: application/x-www-form-urlencoded
-Content-Length: 21
 
 """
 
 response = Servy.Handler.handle(request)
 
-IO.puts "Hey"
-
 IO.puts response
+
